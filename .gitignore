@@ -52,3 +52,5 @@ spring-shell.log
 
 # React build
 frontend/build/
+
+.env
