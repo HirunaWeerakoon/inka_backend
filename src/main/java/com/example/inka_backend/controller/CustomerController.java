@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/customers")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "https://inka-frontend-p.vercel.app")
 public class CustomerController {
 
     @Autowired

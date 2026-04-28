@@ -7,6 +7,7 @@ import com.example.inka_backend.security.JwtTokenProvider;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -23,6 +24,9 @@ public class CustomSuccessHandler implements AuthenticationSuccessHandler {
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
+
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -49,7 +53,7 @@ public class CustomSuccessHandler implements AuthenticationSuccessHandler {
         String token = jwtTokenProvider.generateToken(customer.getCustomerId(), customer.getEmail(),
                 customer.getRole());
 
-        String targetUrl = "http://localhost:3000/oauth2/redirect?token=" + token;
+        String targetUrl = frontendUrl + "/oauth2/redirect?token=" + token;
         response.sendRedirect(targetUrl);
     }
 }
