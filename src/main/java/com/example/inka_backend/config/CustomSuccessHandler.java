@@ -25,7 +25,7 @@ public class CustomSuccessHandler implements AuthenticationSuccessHandler {
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
-    @Value("${app.frontend-url}")
+    @Value("${app.frontend-url:}")
     private String frontendUrl;
 
     @Override
@@ -53,7 +53,10 @@ public class CustomSuccessHandler implements AuthenticationSuccessHandler {
         String token = jwtTokenProvider.generateToken(customer.getCustomerId(), customer.getEmail(),
                 customer.getRole());
 
-        String targetUrl = frontendUrl + "/oauth2/redirect?token=" + token;
+        String frontendBaseUrl = (frontendUrl == null || frontendUrl.isBlank())
+            ? "https://inka-frontend-p.vercel.app"
+            : frontendUrl;
+        String targetUrl = frontendBaseUrl + "/oauth2/redirect?token=" + token;
         response.sendRedirect(targetUrl);
     }
 }
