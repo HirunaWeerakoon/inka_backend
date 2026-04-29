@@ -5,6 +5,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -13,12 +14,15 @@ import java.util.Date;
 @Component
 public class JwtTokenProvider {
 
-    // Ideally, this should be in application.properties.
-    // Using a strong 256-bit key for HMAC-SHA256
-    private final String jwtSecret = "8z3b$u#D9k!v@1m&X4pN7q*T6w^Y2c%A";
+    private final String jwtSecret;
+    private final long jwtExpirationMs;
 
-    // 24 hours
-    private final long jwtExpirationMs = 86400000;
+    public JwtTokenProvider(
+            @Value("${jwt.secret}") String jwtSecret,
+            @Value("${jwt.expiration-ms}") long jwtExpirationMs) {
+        this.jwtSecret = jwtSecret;
+        this.jwtExpirationMs = jwtExpirationMs;
+    }
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes());

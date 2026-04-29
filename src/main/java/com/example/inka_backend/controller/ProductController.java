@@ -10,7 +10,6 @@ import java.util.List;
 @RestController // Tells Spring: "this handles HTTP requests"
 @RequestMapping("/api/products") // All endpoints start with /api/products
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*") // Allows frontend to call this API
 public class ProductController {
 
     private final ProductService productService;

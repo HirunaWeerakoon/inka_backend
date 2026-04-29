@@ -14,7 +14,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/checkout")
-@CrossOrigin(origins = "*")
 public class CheckoutController {
 
     private final CheckoutService checkoutService;

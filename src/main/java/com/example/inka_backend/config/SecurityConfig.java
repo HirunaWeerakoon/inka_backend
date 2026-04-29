@@ -4,6 +4,7 @@ import com.example.inka_backend.security.JwtAuthenticationFilter;
 import com.example.inka_backend.service.CustomOAuth2CustomerService;
 import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -28,6 +29,9 @@ public class SecurityConfig {
     @Autowired
     private CustomOAuth2CustomerService customOAuth2CustomerService;
 
+    @Value("${spring.h2.console.enabled:false}")
+    private boolean h2ConsoleEnabled;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -37,9 +41,9 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // H2 console — allow all dispatcher types so it works without a session
                         .dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.ERROR).permitAll()
-                        .requestMatchers("/h2-console/**").permitAll()
+                        .requestMatchers("/h2-console/**").access((authentication, context) ->
+                                new org.springframework.security.authorization.AuthorizationDecision(h2ConsoleEnabled))
 
                         // Google OAuth2 flow
                         .requestMatchers("/oauth2/**", "/login/oauth2/**", "/login/**").permitAll()

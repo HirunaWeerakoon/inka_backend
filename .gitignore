@@ -8,9 +8,19 @@ target/
 # Logs
 *.log
 logs/
+build*.txt
+*_compile*.txt
+compile_check*.txt
+fresh_compile*.txt
+merge_compile*.txt
+test_output*.txt
+verify_compile*.txt
+run_*.txt
+out.txt
 
 # Secrets & environment
 .env
+.env.*
 application-local.properties
 application-secret.properties
 **/src/main/resources/application-local.properties
@@ -49,6 +59,9 @@ Thumbs.db
 
 ### Spring Boot ###
 spring-shell.log
+data/
+*.mv.db
+*.trace.db
 
 # React build
 frontend/build/
