@@ -21,6 +21,7 @@ out.txt
 # Secrets & environment
 .env
 .env.*
+prod.env
 application-local.properties
 application-secret.properties
 **/src/main/resources/application-local.properties
