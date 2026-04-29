@@ -139,7 +139,7 @@ jobs:
         run: |
           SSH_OPTS="-o StrictHostKeyChecking=yes -i ~/.ssh/deploy_key"
           ssh $SSH_OPTS -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
-            "APP_DIR='$APP_DIR' IMAGE='$IMAGE_REPO:$DEPLOY_ENV' CONTAINER_NAME='$CONTAINER_NAME' NETWORK_ALIAS='$NETWORK_ALIAS' DB_CONTAINER_NAME='$DB_CONTAINER_NAME' DB_VOLUME_NAME='$DB_VOLUME_NAME' NPM_NET_NAME='${NPM_NET_NAME:-app_app-network}' bash -s" <<'EOF'
+            "APP_DIR='$APP_DIR' IMAGE='$IMAGE_REPO:$DEPLOY_ENV' CONTAINER_NAME='$CONTAINER_NAME' NETWORK_ALIAS='$NETWORK_ALIAS' DB_CONTAINER_NAME='$DB_CONTAINER_NAME' DB_VOLUME_NAME='$DB_VOLUME_NAME' NPM_NET_NAME='${NPM_NET_NAME:-npm_default}' bash -s" <<'EOF'
           set -euo pipefail
 
           if ! docker network inspect "$NPM_NET_NAME" >/dev/null 2>&1; then
