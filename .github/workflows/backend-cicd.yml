@@ -90,6 +90,8 @@ jobs:
           echo "APP_DIR=/var/www/inka-backend" >> "$GITHUB_ENV"
           echo "CONTAINER_NAME=${APP_NAME}-prod" >> "$GITHUB_ENV"
           echo "NETWORK_ALIAS=${APP_NAME}-prod" >> "$GITHUB_ENV"
+          echo "DB_CONTAINER_NAME=${APP_NAME}-postgres-prod" >> "$GITHUB_ENV"
+          echo "DB_VOLUME_NAME=${APP_NAME}-postgres-data" >> "$GITHUB_ENV"
 
       - name: Install SSH client tools
         run: sudo apt-get update && sudo apt-get install -y openssh-client
@@ -137,12 +139,49 @@ jobs:
         run: |
           SSH_OPTS="-o StrictHostKeyChecking=yes -i ~/.ssh/deploy_key"
           ssh $SSH_OPTS -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
-            "APP_DIR='$APP_DIR' IMAGE='$IMAGE_REPO:$DEPLOY_ENV' CONTAINER_NAME='$CONTAINER_NAME' NETWORK_ALIAS='$NETWORK_ALIAS' NPM_NET_NAME='${NPM_NET_NAME:-app_app-network}' bash -s" <<'EOF'
+            "APP_DIR='$APP_DIR' IMAGE='$IMAGE_REPO:$DEPLOY_ENV' CONTAINER_NAME='$CONTAINER_NAME' NETWORK_ALIAS='$NETWORK_ALIAS' DB_CONTAINER_NAME='$DB_CONTAINER_NAME' DB_VOLUME_NAME='$DB_VOLUME_NAME' NPM_NET_NAME='${NPM_NET_NAME:-app_app-network}' bash -s" <<'EOF'
           set -euo pipefail
 
           if ! docker network inspect "$NPM_NET_NAME" >/dev/null 2>&1; then
             docker network create --driver bridge "$NPM_NET_NAME"
           fi
+
+          set -a
+          . "$APP_DIR/.env"
+          set +a
+
+          POSTGRES_DB="${POSTGRES_DB:-inka}"
+          DATABASE_USERNAME="${DATABASE_USERNAME:?DATABASE_USERNAME is required}"
+          DATABASE_PASSWORD="${DATABASE_PASSWORD:?DATABASE_PASSWORD is required}"
+
+          if ! docker ps -a --format '{{.Names}}' | grep -Fxq "$DB_CONTAINER_NAME"; then
+            docker run -d --name "$DB_CONTAINER_NAME" \
+              --network "$NPM_NET_NAME" \
+              --network-alias db \
+              -e POSTGRES_DB="$POSTGRES_DB" \
+              -e POSTGRES_USER="$DATABASE_USERNAME" \
+              -e POSTGRES_PASSWORD="$DATABASE_PASSWORD" \
+              -v "$DB_VOLUME_NAME:/var/lib/postgresql/data" \
+              --restart unless-stopped \
+              postgres:16-alpine
+          else
+            docker start "$DB_CONTAINER_NAME" >/dev/null
+            if ! docker network inspect "$NPM_NET_NAME" --format '{{range .Containers}}{{.Name}}{{"\n"}}{{end}}' | grep -Fxq "$DB_CONTAINER_NAME"; then
+              docker network connect --alias db "$NPM_NET_NAME" "$DB_CONTAINER_NAME"
+            fi
+          fi
+
+          for i in $(seq 1 30); do
+            if docker exec "$DB_CONTAINER_NAME" pg_isready -U "$DATABASE_USERNAME" -d "$POSTGRES_DB" >/dev/null 2>&1; then
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              echo "Postgres did not become ready" >&2
+              docker logs "$DB_CONTAINER_NAME" >&2
+              exit 1
+            fi
+            sleep 2
+          done
 
           docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
           docker pull "$IMAGE"
