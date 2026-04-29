@@ -20,66 +20,76 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Autowired
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
+        @Autowired
+        private JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    @Autowired
-    private CustomSuccessHandler customSuccessHandler;
+        @Autowired
+        private CustomSuccessHandler customSuccessHandler;
 
-    @Autowired
-    private CustomOAuth2CustomerService customOAuth2CustomerService;
+        @Autowired
+        private CustomOAuth2CustomerService customOAuth2CustomerService;
 
-    @Value("${spring.h2.console.enabled:false}")
-    private boolean h2ConsoleEnabled;
+        @Value("${spring.h2.console.enabled:false}")
+        private boolean h2ConsoleEnabled;
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(csrf -> csrf.disable())
+        @Bean
+        public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+                http
+                                .csrf(csrf -> csrf.disable())
 
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                .authorizeHttpRequests(auth -> auth
+                                .authorizeHttpRequests(auth -> auth
 
-                        .dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.ERROR).permitAll()
-                        .requestMatchers("/h2-console/**").access((authentication, context) ->
-                                new org.springframework.security.authorization.AuthorizationDecision(h2ConsoleEnabled))
+                                                .dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.ERROR)
+                                                .permitAll()
+                                                // Allow CORS preflight requests
+                                                .requestMatchers(HttpMethod.OPTIONS, "/**")
+                                                .permitAll()
+                                                .requestMatchers("/h2-console/**")
+                                                .access((authentication,
+                                                                context) -> new org.springframework.security.authorization.AuthorizationDecision(
+                                                                                h2ConsoleEnabled))
 
-                        // Google OAuth2 flow
-                        .requestMatchers("/oauth2/**", "/login/oauth2/**", "/login/**").permitAll()
+                                                // Google OAuth2 flow
+                                                .requestMatchers("/oauth2/**", "/login/oauth2/**", "/login/**")
+                                                .permitAll()
 
-                        // Email/password auth
-                        .requestMatchers("/api/auth/**").permitAll()
+                                                // Email/password auth
+                                                .requestMatchers("/api/auth/**").permitAll()
 
-                        // Stripe checkout + webhook
-                        .requestMatchers("/api/checkout/**").permitAll()
+                                                // Stripe checkout + webhook
+                                                .requestMatchers("/api/checkout/**").permitAll()
 
-                        // Public read access
-                        .requestMatchers("/", "/api/products/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
-                        .requestMatchers("/api/images/**").permitAll() // Cloudinary image upload endpoint
+                                                // Public read access
+                                                .requestMatchers("/", "/api/products/**").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
+                                                .requestMatchers("/api/images/**").permitAll() // Cloudinary image
+                                                                                               // upload endpoint
 
-                        // Admin only
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                                                // Admin only
+                                                .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
-                        // Everything else requires a valid JWT
-                        .anyRequest().authenticated()
+                                                // Everything else requires a valid JWT
+                                                .anyRequest().authenticated()
 
-                )
+                                )
 
-                .oauth2Login(oauth -> oauth
-                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2CustomerService))
-                        .successHandler(customSuccessHandler))
+                                .oauth2Login(oauth -> oauth
+                                                .userInfoEndpoint(userInfo -> userInfo
+                                                                .userService(customOAuth2CustomerService))
+                                                .successHandler(customSuccessHandler))
 
-                .addFilterBefore(jwtAuthenticationFilter,
-                        UsernamePasswordAuthenticationFilter.class)
+                                .addFilterBefore(jwtAuthenticationFilter,
+                                                UsernamePasswordAuthenticationFilter.class)
 
-                // Required for H2 console to render in iframe
-                .headers(headers -> headers.frameOptions(frame -> frame.disable()));
+                                // Required for H2 console to render in iframe
+                                .headers(headers -> headers.frameOptions(frame -> frame.disable()));
 
-        return http.build();
-    }
+                return http.build();
+        }
 
         @Bean
         public PasswordEncoder passwordEncoder() {
